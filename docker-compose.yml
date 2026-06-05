@@ -1,0 +1,28 @@
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: placement_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/placement_db
+      MODEL_PATH: ml/model.pkl
+      MODEL_VERSION: 1.0.0
+      DEBUG: "True"
+    volumes:
+      - ./ml:/app/ml
+
+volumes:
+  postgres_data:

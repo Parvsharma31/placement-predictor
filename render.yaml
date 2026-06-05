@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: placement-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health/
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: MODEL_PATH
+        value: ml/model.pkl
+      - key: MODEL_VERSION
+        value: "1.0.0"
+      - key: DEBUG
+        value: "False"
+      - key: PORT
+        value: "8000"
