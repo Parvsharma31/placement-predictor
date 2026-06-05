@@ -1,3 +1,9 @@
+databases:
+  - name: placement-db
+    databaseName: placement_db
+    user: placement
+    plan: free
+
 services:
   - type: web
     name: placement-api
@@ -7,12 +13,12 @@ services:
     healthCheckPath: /health/
     envVars:
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: placement-db
+          property: connectionString
       - key: MODEL_PATH
         value: ml/model.pkl
       - key: MODEL_VERSION
         value: "1.0.0"
       - key: DEBUG
         value: "False"
-      - key: PORT
-        value: "8000"
