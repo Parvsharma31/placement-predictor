@@ -2,11 +2,24 @@
 
 Production-style REST API that predicts student placement outcomes using a scikit-learn model, with PostgreSQL persistence and Docker support.
 
+[![Live Demo](https://img.shields.io/badge/demo-live-success)](https://placement-api-t850.onrender.com/docs)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.111.0-009688?logo=fastapi&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-1.4.2-F7931E?logo=scikit-learn&logoColor=white)
+
+## Live Demo
+
+The API is deployed on Render and ready to use:
+
+| Resource | URL |
+|----------|-----|
+| **Interactive docs** | [https://placement-api-t850.onrender.com/docs](https://placement-api-t850.onrender.com/docs) |
+| **Health check** | [https://placement-api-t850.onrender.com/health/](https://placement-api-t850.onrender.com/health/) |
+| **GitHub repo** | [https://github.com/Parvsharma31/placement-predictor](https://github.com/Parvsharma31/placement-predictor) |
+
+> **Note:** On Render's free tier, the service sleeps after ~15 minutes of inactivity. The first request after sleep may take 30–60 seconds.
 
 ## Features
 
@@ -16,6 +29,7 @@ Production-style REST API that predicts student placement outcomes using a sciki
 - **Computed fields** — `placement_readiness_score` derived from student inputs
 - **PostgreSQL storage** — Predictions persisted with SQLAlchemy ORM
 - **Docker support** — Multi-container setup with `docker compose`
+- **Cloud deployment** — One-click deploy to Render via `render.yaml`
 
 ## Project Structure
 
@@ -29,7 +43,7 @@ placement_predictor/
 │   │   └── prediction.py       # Prediction CRUD routes
 │   ├── schemas/
 │   │   ├── request_schema.py   # Pydantic request models
-│   │   └── response_schema.py    # Pydantic response models
+│   │   └── response_schema.py  # Pydantic response models
 │   ├── services/
 │   │   └── predictor.py        # Model loading and inference
 │   └── database/
@@ -37,22 +51,63 @@ placement_predictor/
 │       └── models.py           # ORM models
 ├── ml/
 │   ├── train_model.py          # Model training script
-│   └── model.pkl               # Trained pipeline (generated)
-├── .env                        # Local environment variables
+│   └── model.pkl               # Trained pipeline
+├── .env                        # Local environment variables (not committed)
 ├── .env.example                # Environment template
 ├── requirements.txt
 ├── Dockerfile
 ├── docker-compose.yml
+├── render.yaml                 # Render Blueprint (IaC)
 └── README.md
 ```
+
+## Quick Start (Use the Live API)
+
+No setup required — open the [Swagger UI](https://placement-api-t850.onrender.com/docs) and try **POST `/predictions/predict`** with this body:
+
+```json
+{
+  "academic": {
+    "cgpa": 8.5,
+    "aptitude_score": 78
+  },
+  "skills": {
+    "communication_score": 82,
+    "dsa_score": 70,
+    "projects": 3
+  },
+  "internship_experience": true
+}
+```
+
+Or from the terminal:
+
+```bash
+curl -X POST https://placement-api-t850.onrender.com/predictions/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "academic": {"cgpa": 8.5, "aptitude_score": 78},
+    "skills": {"communication_score": 82, "dsa_score": 70, "projects": 3},
+    "internship_experience": true
+  }'
+```
+
+### Share with others
+
+Send the docs link — anyone can try the API in their browser:
+
+> **Student Placement Prediction API**  
+> Try it: [https://placement-api-t850.onrender.com/docs](https://placement-api-t850.onrender.com/docs)
+
+For developers, share the base URL `https://placement-api-t850.onrender.com` and the GitHub repo.
 
 ## Local Setup
 
 ### 1. Clone the repository
 
 ```bash
-git clone <repository-url>
-cd placement_predictor
+git clone https://github.com/Parvsharma31/placement-predictor.git
+cd placement-predictor
 ```
 
 ### 2. Create a virtual environment
@@ -92,7 +147,11 @@ MODEL_VERSION=1.0.0
 DEBUG=True
 ```
 
-### 5. Train the model
+### 5. Start PostgreSQL locally
+
+Ensure PostgreSQL is running and the `placement_db` database exists, then verify your `DATABASE_URL` in `.env`.
+
+### 6. Train the model
 
 ```bash
 python ml/train_model.py
@@ -100,7 +159,7 @@ python ml/train_model.py
 
 This generates `ml/model.pkl` and prints a classification report on the test set.
 
-### 6. Run the API
+### 7. Run the API
 
 ```bash
 uvicorn app.main:app --reload
@@ -135,21 +194,26 @@ This starts:
 
 ### Example Requests
 
-**Create a prediction:**
+**Create a prediction (local):**
 
 ```bash
 curl -X POST http://127.0.0.1:8000/predictions/predict \
   -H "Content-Type: application/json" \
   -d '{
-    "academic": {
-      "cgpa": 8.5,
-      "aptitude_score": 78
-    },
-    "skills": {
-      "communication_score": 82,
-      "dsa_score": 70,
-      "projects": 3
-    },
+    "academic": {"cgpa": 8.5, "aptitude_score": 78},
+    "skills": {"communication_score": 82, "dsa_score": 70, "projects": 3},
+    "internship_experience": true
+  }'
+```
+
+**Create a prediction (live):**
+
+```bash
+curl -X POST https://placement-api-t850.onrender.com/predictions/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "academic": {"cgpa": 8.5, "aptitude_score": 78},
+    "skills": {"communication_score": 82, "dsa_score": 70, "projects": 3},
     "internship_experience": true
   }'
 ```
@@ -157,7 +221,7 @@ curl -X POST http://127.0.0.1:8000/predictions/predict \
 **List predictions:**
 
 ```bash
-curl http://127.0.0.1:8000/predictions/
+curl https://placement-api-t850.onrender.com/predictions/
 ```
 
 Optional query parameters for `GET /predictions/`:
@@ -169,7 +233,34 @@ Optional query parameters for `GET /predictions/`:
 | `order` | `asc` or `desc` (default: `desc`) |
 | `min_confidence` | Minimum confidence percentage (0–100) |
 
+### Sample Response
+
+```json
+{
+  "id": 1,
+  "placement_prediction": "Placed",
+  "confidence": 99.0,
+  "probabilities": {"placed": 99.0, "not_placed": 1.0},
+  "placement_readiness_score": 96.9,
+  "created_at": "2026-06-07T05:34:49.648970"
+}
+```
+
 ## Deployment
+
+### Deploy to Render (recommended)
+
+The project includes a `render.yaml` Blueprint that provisions both the API and a managed PostgreSQL database.
+
+1. **Push code to GitHub** — [https://github.com/Parvsharma31/placement-predictor](https://github.com/Parvsharma31/placement-predictor)
+2. **Create a Blueprint** on [render.com](https://render.com) and connect the repo
+3. **Apply** — Render creates:
+   - `placement-db` — PostgreSQL database
+   - `placement-api` — Docker web service
+4. **`DATABASE_URL` is wired automatically** via `fromDatabase` in `render.yaml` — no manual entry needed in most cases
+5. **Verify** — Visit `https://YOUR-SERVICE.onrender.com/health/` and confirm `"database": "connected"`
+
+If prompted manually for `DATABASE_URL`, paste the **Internal Database URL** from the `placement-db` service in the Render dashboard.
 
 ### Docker Hub
 
@@ -180,30 +271,13 @@ docker build -t your-dockerhub-username/placement-predictor:latest .
 docker push your-dockerhub-username/placement-predictor:latest
 ```
 
-On the target server, pull the image and run with `docker compose` or pass `DATABASE_URL` and other env vars at runtime.
-
 ### AWS EC2
 
-1. Launch an EC2 instance (Ubuntu recommended) with security group rules for ports **22**, **8000**, and **5432** (or use RDS for PostgreSQL instead of exposing 5432).
+1. Launch an EC2 instance (Ubuntu recommended) with security group rules for ports **22**, **8000**, and **5432** (or use RDS for PostgreSQL).
 2. Install Docker and Docker Compose on the instance.
-3. Clone the repo (or pull your Docker Hub image).
-4. Set environment variables in `.env` or export them in the shell.
-5. Run `docker compose up -d --build`.
-6. Optionally place an Application Load Balancer or Nginx reverse proxy in front of the API and terminate TLS with ACM.
-
-For production, use a managed database (e.g. Amazon RDS), store secrets in AWS Secrets Manager, and restrict security group access to the minimum required ports.
-
-### Deploy to Render
-
-1. **Push code to GitHub** — Commit the project (including `render.yaml`, `Dockerfile`, and `ml/model.pkl`) and push to a GitHub repository.
-
-2. **Connect the repo on [render.com](https://render.com)** — In the Render Dashboard, create a new **Blueprint** and connect your GitHub repository. Render will read `render.yaml` and provision the `placement-api` web service.
-
-3. **Set `DATABASE_URL`** — When prompted during Blueprint setup, provide the `DATABASE_URL` secret (marked `sync: false` in `render.yaml`). Use the connection string from Render's managed **PostgreSQL** add-on:
-   - Create a PostgreSQL database in Render (or add it to your Blueprint).
-   - Copy the **Internal Database URL** and paste it as the `DATABASE_URL` environment variable for `placement-api`.
-
-4. **Deploy** — Render builds the Docker image from the root `Dockerfile` and starts the service on port `8000`. Once the deploy succeeds, the API is live at your `*.onrender.com` URL (e.g. `https://placement-api.onrender.com`). Verify with `GET /health/`.
+3. Clone the repo and set environment variables in `.env`.
+4. Run `docker compose up -d --build`.
+5. Optionally place an ALB or Nginx reverse proxy in front of the API.
 
 ## Environment Variables
 
@@ -215,3 +289,7 @@ For production, use a managed database (e.g. Amazon RDS), store secrets in AWS S
 | `DEBUG` | No | Enable debug mode | `True` |
 
 Copy `.env.example` to `.env` and fill in the required values before running locally or in Docker.
+
+## License
+
+MIT — feel free to use, share, and build on this project.
